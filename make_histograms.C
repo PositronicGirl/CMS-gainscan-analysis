@@ -137,22 +137,31 @@ void make_histograms(const TString run_filepath, const TString ref_filepath, con
    //read all run entries and fill the histograms
    Long64_t numentries = run_tree->GetEntries();
    Long64_t refentries = ref_tree->GetEntries();
-   Long64_t bad_entry_counter = 0;
+   Long64_t invalid_run_counter = 0;
+   Long64_t bad_index_counter = 0;
+   Long64_t invalid_ref_counter = 0;
+
    for (Long64_t i=0;i<numentries;i++) {
       run_tree->GetEntry(i);
    
-      if (!run_isvalid) {
-         bad_entry_counter++;
+//      if (!run_isvalid) {
+//      the isvalid check doesn't work right anymore, so instead we check if the tickheight is in the valid range
+      if (run_tickheight > 800 || run_tickheight < 200) {
+         invalid_run_counter++;
+         if (ref_tickheight > 800 || ref_tickheight < 200) {
+            invalid_ref_counter++;
+         }
          continue;
       }
      
       if (ref_tree->GetEntryWithIndex(detid,i2caddress)==-1) {
-         bad_entry_counter++;
+         bad_index_counter++;
          continue;
       }  
 
-      if (!ref_isvalid) {
-         bad_entry_counter++;
+//      if (!ref_isvalid) {
+      if (ref_tickheight > 800 || ref_tickheight < 200) {
+         invalid_ref_counter++;
          continue;
       }
        
@@ -175,10 +184,16 @@ void make_histograms(const TString run_filepath, const TString ref_filepath, con
       th_difflinknoise->Fill(this_run,percentage_linknoise);
       th_diffzerolight->Fill(this_run,percentage_zerolight);
    }
-   if (bad_entry_counter > 0) {
-      cout << run_filename << " contained " << to_string(bad_entry_counter) << " excluded entries out of " << to_string(numentries) << " total entries" << endl;
+   if (invalid_run_counter > 0) {
+      cout << run_filename << " contained " << to_string(invalid_run_counter) << " invalid run entries out of " << to_string(numentries) << " total entries" << endl;
    }
-   
+    if (bad_index_counter > 0) {
+      cout << run_filename << " contained " << to_string(bad_index_counter) << " mismatched entries out of " << to_string(numentries) << " total entries" << endl;
+   }
+     if (invalid_ref_counter > 0) {
+      cout << run_filename << " contained " << to_string(invalid_ref_counter) << " invalid ref entries out of " << to_string(numentries) << " total entries" << endl;
+   }
+  
    // scale all of the hists
    //cout << "prescaling diffmeasgain integral is " << to_string(th_diffmeasgain->Integral()) << endl;
    //cout << "prescaling diffbias integral is " << to_string(th_diffbias->Integral()) << endl;
@@ -205,6 +220,7 @@ void make_histograms(const TString run_filepath, const TString ref_filepath, con
    //cout << "scaled diffbaselineslop integral is " << to_string(th_diffbaselineslop->Integral()) << endl;
    //cout << "scaled difftickheight integral is " << to_string(th_difftickheight->Integral()) << endl;
    //cout << "scaled difflinknoise integral is " << to_string(th_difflinknoise->Integral()) << endl;
+
    TFile *output_file = new TFile(output_filename,"recreate");
    output_file->cd();
    th_diffmeasgain->Write();

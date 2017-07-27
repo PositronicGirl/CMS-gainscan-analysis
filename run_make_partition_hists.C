@@ -40,6 +40,9 @@ parsed_config parse_config(TString filename){
     return result; 
 }
 
+
+// this function gets the begin and end dates from each partition separately, but draw_partition.C is not designed to handle the partitions having different begin dates
+/*
 vector<TDatime> get_begin_end_dates(vector<TDatime> rundates){
 
     TString begin_date_string = to_string(rundates[1].GetYear()) + "-" 
@@ -55,6 +58,21 @@ vector<TDatime> get_begin_end_dates(vector<TDatime> rundates){
         + to_string(1) + " 00:00:00"; 
     TDatime begin_date(begin_date_string);
     TDatime end_date(end_date_string);
+
+    vector<TDatime> result;
+    result.push_back(begin_date);
+    result.push_back(end_date);
+
+    return result;
+}
+*/
+
+// this function replaces the other get_begin_end_dates for when you want fixed begin and end dates on the plots for all partitions
+vector<TDatime> get_begin_end_dates(Int_t begin_date_int, Int_t end_date_int){
+
+    TDatime begin_date = TDatime(begin_date_int,000000);
+    TDatime end_date = TDatime(end_date_int,000000);
+
     vector<TDatime> result;
     result.push_back(begin_date);
     result.push_back(end_date);
@@ -67,8 +85,9 @@ Int_t get_num_time_bins(vector<TDatime> begin_end_dates){
     return numtimebins;
 }
 
-void produce_hists(TString output_dir, TString output_name_base, parsed_config partition_info, TString yaxisparamfile){
-    vector<TDatime> begin_end_dates = get_begin_end_dates(partition_info.rundates);
+void produce_hists(TString output_dir, TString output_name_base, parsed_config partition_info, TString yaxisparamfile, Int_t begin_date, Int_t end_date){
+    vector<TDatime> begin_end_dates = get_begin_end_dates(begin_date, end_date);
+    // remember to change the argument of get_begin_end_dates depending on which version you use
     Int_t offset = begin_end_dates[0].Convert();
     std::cout << "begin date is " << begin_end_dates[0].AsSQLString() << std::endl;
     std::cout << "end date is " << begin_end_dates[1].AsSQLString() << std::endl;
@@ -93,21 +112,21 @@ void produce_hists(TString output_dir, TString output_name_base, parsed_config p
     }
 }
 
-void run_make_partition_hists(TString tob_filelist, TString tib_filelist, TString tecp_filelist, TString tecm_filelist, TString output_dir, TString output_prefix, TString yaxisparamfile){
+void run_make_partition_hists(TString tob_filelist, TString tib_filelist, TString tecp_filelist, TString tecm_filelist, TString output_dir, TString output_prefix, TString yaxisparamfile, Int_t begin_date, Int_t end_date){
 
     cout << "\n ===== Processing TOB files =====\n" << endl;
     parsed_config tob_info = parse_config(tob_filelist);
-    produce_hists(output_dir, "tob_" + output_prefix, tob_info, yaxisparamfile);
+    produce_hists(output_dir, "tob_" + output_prefix, tob_info, yaxisparamfile, begin_date, end_date);
 
     cout << "\n ===== Processing TIB files =====\n" << endl;
     parsed_config tib_info = parse_config(tib_filelist);
-    produce_hists(output_dir, "tib_" + output_prefix, tib_info, yaxisparamfile);
+    produce_hists(output_dir, "tib_" + output_prefix, tib_info, yaxisparamfile, begin_date, end_date);
 
-    parsed_config tecp_info = parse_config(tecp_filelist);
     cout << "\n ===== Processing TECP files =====\n" << endl;
-    produce_hists(output_dir, "tecp_" + output_prefix, tecp_info, yaxisparamfile);
+    parsed_config tecp_info = parse_config(tecp_filelist);
+    produce_hists(output_dir, "tecp_" + output_prefix, tecp_info, yaxisparamfile, begin_date, end_date);
 
-    parsed_config tecm_info = parse_config(tecm_filelist);
     cout << "\n ===== Processing TECM files =====\n" << endl;
-    produce_hists(output_dir, "tecm_" + output_prefix, tecm_info, yaxisparamfile);
+    parsed_config tecm_info = parse_config(tecm_filelist);
+    produce_hists(output_dir, "tecm_" + output_prefix, tecm_info, yaxisparamfile, begin_date, end_date);
 }
